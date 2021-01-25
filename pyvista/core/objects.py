@@ -3,11 +3,14 @@
 The data objects does not have any sort of spatial reference.
 
 """
+from typing import Dict, List, Tuple, Iterator
+
 import imageio
 import numpy as np
 import vtk
 
 import pyvista
+from pyvista import pyvista_ndarray
 from pyvista.utilities import (FieldAssociation, assert_empty_kwargs, get_array,
                                row_array)
 from .common import DataObject
@@ -48,7 +51,7 @@ class Table(vtk.vtkTable, DataObject):
             else:
                 raise TypeError(f'Table unable to be made from ({type(args[0])})')
 
-    def _from_arrays(self, arrays):
+    def _from_arrays(self, arrays: np.ndarray):
         if not arrays.ndim == 2:
             raise ValueError('Only 2D arrays are supported by Tables.')
         np_table = arrays.T
@@ -56,7 +59,7 @@ class Table(vtk.vtkTable, DataObject):
             self.row_arrays[f'Array {i}'] = array
         return
 
-    def _from_dict(self, array_dict):
+    def _from_dict(self, array_dict: Dict[str, np.ndarray]):
         for array in array_dict.values():
             if not isinstance(array, np.ndarray) and array.ndim < 3:
                 raise ValueError('Dictionary must contain only NumPy arrays with maximum of 2D.')
@@ -64,27 +67,28 @@ class Table(vtk.vtkTable, DataObject):
             self.row_arrays[name] = array
         return
 
+    # TODO, type hints, how to get pandas type if it's optional?
     def _from_pandas(self, data_frame):
         for name in data_frame.keys():
             self.row_arrays[name] = data_frame[name].values
 
     @property
-    def n_rows(self):
+    def n_rows(self) -> int:
         """Return the number of rows."""
         return self.GetNumberOfRows()
 
     @n_rows.setter
-    def n_rows(self, n):
+    def n_rows(self, n: int):
         """Set the number of rows."""
         self.SetNumberOfRows(n)
 
     @property
-    def n_columns(self):
+    def n_columns(self) -> int:
         """Return the number of columns."""
         return self.GetNumberOfColumns()
 
     @property
-    def n_arrays(self):
+    def n_arrays(self) -> int:
         """Return the number of columns.
 
         Alias for: ``n_columns``.
@@ -92,7 +96,7 @@ class Table(vtk.vtkTable, DataObject):
         """
         return self.n_columns
 
-    def _row_array(self, name=None):
+    def _row_array(self, name=None) -> pyvista_ndarray:
         """Return row scalars of a vtk object.
 
         Parameters
@@ -109,31 +113,31 @@ class Table(vtk.vtkTable, DataObject):
         return self.row_arrays[name]
 
     @property
-    def row_arrays(self):
+    def row_arrays(self) -> DataSetAttributes:
         """Return the all row arrays."""
         return DataSetAttributes(vtkobject=self.GetRowData(), dataset=self, association=FieldAssociation.ROW)
 
-    def keys(self):
+    def keys(self) -> List[str]:
         """Return the table keys."""
         return self.row_arrays.keys()
 
-    def items(self):
+    def items(self) -> List[Tuple[str, pyvista_ndarray]]:
         """Return the table items."""
         return self.row_arrays.items()
 
-    def values(self):
+    def values(self) -> List[pyvista_ndarray]:
         """Return the table values."""
         return self.row_arrays.values()
 
-    def update(self, data):
+    def update(self, data: Dict[str, np.ndarray]):
         """Set the table data."""
         self.row_arrays.update(data)
 
-    def pop(self, name):
+    def pop(self, name: str) -> pyvista_ndarray:
         """Pops off an array by the specified name."""
         return self.row_arrays.pop(name)
 
-    def _add_row_array(self, scalars, name, deep=True):
+    def _add_row_array(self, scalars: np.ndarray, name: str, deep=True):
         """Add scalars to the vtk object.
 
         Parameters
@@ -151,41 +155,42 @@ class Table(vtk.vtkTable, DataObject):
         """
         self.row_arrays[name] = scalars
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: str) -> pyvista_ndarray:
         """Search row data for an array."""
         return self._row_array(name=index)
 
-    def _ipython_key_completions_(self):
+    def _ipython_key_completions_(self) -> List[str]:
         return self.keys()
 
-    def get(self, index):
+    def get(self, index: str) -> pyvista_ndarray:
         """Get an array by its name."""
         return self[index]
 
-    def __setitem__(self, name, scalars):
+    def __setitem__(self, name: str, scalars):
         """Add/set an array in the row_arrays."""
         self.row_arrays[name] = scalars
 
-    def _remove_array(self, field, key):
+    # TODO, field param isn't used
+    def _remove_array(self, field, key: str):
         """Remove a single array by name from each field (internal helper)."""
         self.row_arrays.remove(key)
 
-    def __delitem__(self, name):
+    def __delitem__(self, name: str):
         """Remove an array by the specified name."""
         del self.row_arrays[name]
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[pyvista_ndarray]:
         """Return the iterator across all arrays."""
         for array_name in self.row_arrays:
             yield self.row_arrays[array_name]
 
-    def _get_attrs(self):
+    def _get_attrs(self) -> List[Tuple]:
         """Return the representation methods."""
         attrs = []
         attrs.append(("N Rows", self.n_rows, "{}"))
         return attrs
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         """Return a pretty representation for Jupyter notebooks.
 
         It includes header details and information about all arrays.
@@ -229,15 +234,16 @@ class Table(vtk.vtkTable, DataObject):
             fmt += "</td></tr> </table>"
         return fmt
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the object representation."""
         return self.head(display=False, html=False)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the object string representation."""
         return self.head(display=False, html=False)
 
-    def to_pandas(self):
+    # TODO, type hints, specify return type if pandas is optional(does this work?)
+    def to_pandas(self) -> 'pandas.DataFrame':
         """Create a Pandas DataFrame from this Table."""
         try:
             import pandas as pd
@@ -253,7 +259,7 @@ class Table(vtk.vtkTable, DataObject):
         raise NotImplementedError("Please use the `to_pandas` method and "
                                   "harness Pandas' wonderful file IO methods.")
 
-    def get_data_range(self, arr=None, preference='row'):
+    def get_data_range(self, arr=None, preference='row') -> Tuple[np.ndarray, np.ndarray]:
         """Get the non-NaN min and max of a named array.
 
         Parameters
@@ -306,7 +312,7 @@ class Texture(vtk.vtkTexture, DataObject):
             else:
                 raise TypeError(f'Table unable to be made from ({type(args[0])})')
 
-    def _from_file(self, filename):
+    def _from_file(self, filename: str):
         try:
             image = self._load_file(filename)
             if image.GetNumberOfPoints() < 2:
@@ -315,17 +321,17 @@ class Texture(vtk.vtkTexture, DataObject):
         except (KeyError, ValueError):
             self._from_array(imageio.imread(filename))
 
-    def _from_texture(self, texture):
+    def _from_texture(self, texture: vtk.vtkTexture):
         image = texture.GetInput()
         self._from_image_data(image)
 
-    def _from_image_data(self, image):
+    def _from_image_data(self, image: pyvista.UniformGrid) -> vtk.vtkAlgorithm:
         if not isinstance(image, pyvista.UniformGrid):
             image = pyvista.UniformGrid(image)
         self.SetInputDataObject(image)
         return self.Update()
 
-    def _from_array(self, image):
+    def _from_array(self, image: np.ndarray) -> vtk.vtkAlgorithm:
         """Create a texture from a np.ndarray."""
         if not 2 <= image.ndim <= 3:
             # we support 2 [single component image] or 3 [e.g. rgb or rgba] dims
@@ -344,21 +350,21 @@ class Texture(vtk.vtkTexture, DataObject):
         return self._from_image_data(grid)
 
     @property
-    def repeat(self):
+    def repeat(self) -> vtk.vtkTexture:
         """Repeat the texture."""
         return self.GetRepeat()
 
     @repeat.setter
-    def repeat(self, flag):
+    def repeat(self, flag: bool):
         self.SetRepeat(flag)
 
     @property
-    def n_components(self):
+    def n_components(self) -> int:
         """Components in the image (e.g. 3 [or 4] for RGB[A])."""
         image = self.to_image()
         return image.active_scalars.shape[1]
 
-    def flip(self, axis):
+    def flip(self, axis: int) -> vtk.vtkAlgorithm:
         """Flip this texture inplace along the specified axis. 0 for X and 1 for Y."""
         if not 0 <= axis <= 1:
             raise ValueError(f"Axis {axis} out of bounds")
@@ -366,11 +372,11 @@ class Texture(vtk.vtkTexture, DataObject):
         array = np.flip(array, axis=1 - axis)
         return self._from_array(array)
 
-    def to_image(self):
+    def to_image(self) -> vtk.vtkTexture:
         """Return the texture as an image."""
         return self.GetInput()
 
-    def to_array(self):
+    def to_array(self) -> np.ndarray:
         """Return the texture as a np.ndarray."""
         image = self.to_image()
 
@@ -381,10 +387,11 @@ class Texture(vtk.vtkTexture, DataObject):
 
         return np.flip(image.active_scalars.reshape(shape, order='F'), axis=1).swapaxes(1,0)
 
+    # TODO, type hints, return type?
     def plot(self, *args, **kwargs):
         """Plot the texture as image data by itself."""
         return self.to_image().plot(*args, **kwargs)
 
-    def copy(self):
+    def copy(self) -> 'Texture':
         """Make a copy of this texture."""
         return Texture(self.to_image().copy())
