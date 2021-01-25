@@ -2,9 +2,8 @@
 
 import collections.abc
 import logging
-import warnings
 from pathlib import Path
-from typing import Optional, List, Dict, Tuple, Iterable
+from typing import Optional, List, Tuple, Iterable
 
 import numpy as np
 import vtk
