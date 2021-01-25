@@ -10,6 +10,7 @@ import numpy as np
 import vtk
 
 import pyvista
+from pyvista import pyvista_ndarray
 from pyvista.utilities import (FieldAssociation, get_array, is_pyvista_dataset,
                                raise_not_matching, vtk_id_list_to_array, fileio,
                                abstract_class, axis_rotation)
@@ -339,14 +340,14 @@ class Common(DataSetFilters, DataObject):
         self.set_active_scalars(name)
 
     @property
-    def points(self) -> pyvista.pyvista_ndarray:
+    def points(self) -> pyvista_ndarray:
         """Return a pointer to the points as a numpy object."""
         pts = self.GetPoints()
         if pts is None:
             return None
         vtk_data = pts.GetData()
         # arr = vtk_to_numpy(vtk_data)
-        return pyvista.pyvista_ndarray(vtk_data, dataset=self)
+        return pyvista_ndarray(vtk_data, dataset=self)
 
     @points.setter
     def points(self, points: np.ndarray):
@@ -381,7 +382,7 @@ class Common(DataSetFilters, DataObject):
             return self.glyph(scale=name, orient=name)
 
     @property
-    def vectors(self) -> pyvista.pyvista_ndarray:
+    def vectors(self) -> pyvista_ndarray:
         """Return active vectors."""
         return self.active_vectors
 
@@ -399,7 +400,7 @@ class Common(DataSetFilters, DataObject):
         self.active_vectors_name = DEFAULT_VECTOR_KEY
 
     @property
-    def t_coords(self) -> pyvista.pyvista_ndarray:
+    def t_coords(self) -> pyvista_ndarray:
         """Return the active texture coordinates on the points."""
         return self.point_arrays.t_coords
 
@@ -552,7 +553,7 @@ class Common(DataSetFilters, DataObject):
             self.set_active_scalars(new_name, preference=field)
 
     @property
-    def active_scalars(self) -> pyvista.pyvista_ndarray:
+    def active_scalars(self) -> pyvista_ndarray:
         """Return the active scalars as an array."""
         field, name = self.active_scalars_info
         if name is not None:
