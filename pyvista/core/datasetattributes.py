@@ -1,7 +1,7 @@
 """Implements DataSetAttributes, which represents and manipulates datasets."""
 
 from collections.abc import Iterable
-from typing import Optional, Generator, Union, List, Tuple, Dict
+from typing import Optional, Union, List, Tuple, Dict, Iterator
 
 import numpy as np
 import vtk
@@ -71,7 +71,7 @@ class DataSetAttributes(VTKObjectWrapper):
         """Implement 'in' operator."""
         return name in self.keys()
 
-    def __iter__(self) -> Generator[str, None, None]:
+    def __iter__(self) -> Iterator[str]:
         """Implement for loop iteration."""
         for array in self.keys():
             yield array
