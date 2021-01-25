@@ -47,7 +47,7 @@ class DataObject:
         """Overwrite this mesh with the given mesh as a deep copy."""
         return self.DeepCopy(to_copy)
 
-    def _load_file(self, filename):
+    def _load_file(self, filename: str):
         """Generically load a vtk object from file.
 
         Parameters
@@ -83,10 +83,10 @@ class DataObject:
         reader.Update()
         return reader.GetOutputDataObject(0)
 
-    def _from_file(self, filename):
+    def _from_file(self, filename: str):
         self.shallow_copy(self._load_file(filename))
 
-    def save(self, filename, binary=True):
+    def save(self, filename: str, binary=True):
         """Save this vtk object to file.
 
         Parameters
@@ -218,12 +218,12 @@ class DataObject:
         newobject.copy_meta_from(self)
         return newobject
 
-    def add_field_array(self, scalars, name, deep=True):
+    def add_field_array(self, scalars: np.ndarray, name: str, deep=True):
         """Add a field array."""
         self.field_arrays.append(scalars, name, deep_copy=deep)
 
     @property
-    def field_arrays(self):
+    def field_arrays(self) -> DataSetAttributes:
         """Return vtkFieldData as DataSetAttributes."""
         return DataSetAttributes(self.GetFieldData(), dataset=self, association=FieldAssociation.NONE)
 
@@ -254,7 +254,7 @@ class Common(DataSetFilters, DataObject):
         self._textures = {}
 
     @property
-    def active_scalars_info(self):
+    def active_scalars_info(self) -> ActiveArrayInfo:
         """Return the active scalar's field and name: [field, name]."""
         field, name = self._active_scalars_info
         exclude = {'__custom_rgba', 'Normals', 'vtkOriginalPointIds', 'TCoords'}
@@ -275,7 +275,7 @@ class Common(DataSetFilters, DataObject):
         return self._active_scalars_info
 
     @property
-    def active_vectors_info(self):
+    def active_vectors_info(self) -> ActiveArrayInfo:
         """Return the active scalar's field and name: [field, name]."""
         if self._active_vectors_info.name is None:
             # Sometimes, precomputed normals aren't set as active
@@ -284,12 +284,12 @@ class Common(DataSetFilters, DataObject):
         return self._active_vectors_info
 
     @property
-    def active_tensors_info(self):
+    def active_tensors_info(self) -> ActiveArrayInfo:
         """Return the active tensor's field and name: [field, name]."""
         return self._active_tensors_info
 
     @property
-    def active_vectors(self):
+    def active_vectors(self) -> pyvista_ndarray:
         """Return the active vectors array."""
         field, name = self.active_vectors_info
         if name:
