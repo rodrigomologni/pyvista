@@ -2,10 +2,12 @@
 
 import collections.abc
 import logging
+from collections import Sequence
 from weakref import proxy
 
 import numpy as np
 import vtk
+from typing import List, Optional, Tuple, Union
 from vtk import vtkRenderer
 
 import pyvista
@@ -13,9 +15,10 @@ from pyvista.utilities import wrap, check_depth_peeling
 from .theme import parse_color, parse_font_family, rcParams, MAX_N_COLOR_BARS
 from .tools import create_axes_orientation_box, create_axes_marker
 from .camera import Camera
+from ..typing import Vector, Color, Number
 
 
-def scale_point(camera, point, invert=False):
+def scale_point(camera: [Camera, vtk.vtkCamera], point: Vector, invert: bool=False) -> Vector:
     """Scale a point using the camera's transform matrix.
 
     Parameters
@@ -45,55 +48,55 @@ def scale_point(camera, point, invert=False):
 class CameraPosition:
     """Container to hold camera location attributes."""
 
-    def __init__(self, position, focal_point, viewup):
+    def __init__(self, position: Vector, focal_point: Vector, viewup: Vector):
         """Initialize a new camera position descriptor."""
         self._position = position
         self._focal_point = focal_point
         self._viewup = viewup
 
-    def to_list(self):
+    def to_list(self) -> List[Vector]:
         """Convert to a list of the position, focal point, and viewup."""
         return [self._position, self._focal_point, self._viewup]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """List representation method."""
         return "[{},\n {},\n {}]".format(*self.to_list())
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Vector:
         """Fetch a component by index location like a list."""
         return self.to_list()[index]
 
-    def __eq__(self, other):
+    def __eq__(self, other: 'CameraPosition') -> bool:
         """Comparison operator to act on list version of CameraPosition object."""
         if isinstance(other, CameraPosition):
             return self.to_list() == other.to_list()
         return self.to_list() == other
 
     @property
-    def position(self):
+    def position(self) -> Vector:
         """Location of the camera in world coordinates."""
         return self._position
 
     @position.setter
-    def position(self, value):
+    def position(self, value: Vector):
         self._position = value
 
     @property
-    def focal_point(self):
+    def focal_point(self) -> Vector:
         """Location of the camera's focus in world coordinates."""
         return self._focal_point
 
     @focal_point.setter
-    def focal_point(self, value):
+    def focal_point(self, value: Vector):
         self._focal_point = value
 
     @property
-    def viewup(self):
+    def viewup(self) -> Vector:
         """Viewup vector of the camera."""
         return self._viewup
 
     @viewup.setter
-    def viewup(self, value):
+    def viewup(self, value: Vector):
         self._viewup = value
 
 
@@ -132,7 +135,7 @@ class Renderer(vtkRenderer):
     #### Properties ####
 
     @property
-    def camera_position(self):
+    def camera_position(self) -> CameraPosition:
         """Return camera position of active render window."""
         return CameraPosition(
             scale_point(self.camera, self.camera.position, invert=True),
@@ -140,7 +143,7 @@ class Renderer(vtkRenderer):
             self.camera.up())
 
     @camera_position.setter
-    def camera_position(self, camera_location):
+    def camera_position(self, camera_location: [str, Vector]):
         """Set camera position of all active render windows."""
         if camera_location is None:
             return
@@ -176,13 +179,15 @@ class Renderer(vtkRenderer):
         self.camera_set = True
         self.Modified()
 
+    # TODO, type hints, correct return type?
     @property
-    def camera(self):
+    def camera(self) -> Camera:
         """Return the active camera for the rendering scene."""
         return self._camera
 
+    # TODO, type hints, correct input type?
     @camera.setter
-    def camera(self, source):
+    def camera(self, source: Camera):
         """Set the active camera for the rendering scene."""
         self._camera = source
         self.SetActiveCamera(self._camera)
@@ -195,7 +200,7 @@ class Renderer(vtkRenderer):
         self.camera_set = True
 
     @property
-    def bounds(self):
+    def bounds(self) -> List[float]:
         """Return the bounds of all actors present in the rendering window."""
         the_bounds = np.array([np.inf, -np.inf, np.inf, -np.inf, np.inf, -np.inf])
 
@@ -223,12 +228,12 @@ class Renderer(vtkRenderer):
         return the_bounds.tolist()
 
     @property
-    def length(self):
+    def length(self) -> float:
         """Return the length of the diagonal of the bounding box of the scene."""
         return pyvista.Box(self.bounds).length
 
     @property
-    def center(self):
+    def center(self) -> Vector:
         """Return the center of the bounding box around all data present in the scene."""
         bounds = self.bounds
         x = (bounds[1] + bounds[0])/2
@@ -236,20 +241,22 @@ class Renderer(vtkRenderer):
         z = (bounds[5] + bounds[4])/2
         return [x, y, z]
 
+    # TODO, type hints, correct return type
     @property
-    def background_color(self):
+    def background_color(self) -> vtk.vtkViewport:
         """Return the background color of this renderer."""
         return self.GetBackground()
 
     @background_color.setter
-    def background_color(self, color):
+    def background_color(self, color: Color):
         """Set the background color of this renderer."""
         self.set_background(color)
         self.Modified()
 
     #### Everything else ####
 
-    def enable_depth_peeling(self, number_of_peels=None, occlusion_ratio=None):
+    def enable_depth_peeling(self, number_of_peels: Optional[int]=None,
+                             occlusion_ratio: Optional[float]=None) -> bool:
         """Enable depth peeling to improve rendering of translucent geometry.
 
         Parameters
@@ -296,7 +303,7 @@ class Renderer(vtkRenderer):
         self.SetUseFXAA(False)
         self.Modified()
 
-    def add_border(self, color=[1, 1, 1], width=2.0):
+    def add_border(self, color: Color=[1, 1, 1], width: float=2.0):
         """Add borders around the frame."""
         points = np.array([[1., 1., 0.],
                            [0., 1., 0.],
@@ -328,8 +335,9 @@ class Renderer(vtkRenderer):
         self.Modified()
         return actor
 
-    def add_actor(self, uinput, reset_camera=False, name=None, culling=False,
-                  pickable=True, render=True):
+    def add_actor(self, uinput: [vtk.vtkMapper, vtk.vtkActor], reset_camera: bool=False,
+                  name: Optional[str]=None, culling: bool=False, pickable: bool=True,
+                  render: bool=True) -> Tuple[vtk.vtkActor, vtk.vtkProperty]:
         """Add an actor to render window.
 
         Creates an actor if input is a mapper.
@@ -408,9 +416,10 @@ class Renderer(vtkRenderer):
 
         return actor, actor.GetProperty()
 
-    def add_axes_at_origin(self, x_color=None, y_color=None, z_color=None,
-                           xlabel='X', ylabel='Y', zlabel='Z', line_width=2,
-                           labels_off=False):
+    # TODO, type hints, correct input types?
+    def add_axes_at_origin(self, x_color: Optional[Color]=None, y_color: Optional[Color]=None,
+                           z_color: Optional[Color]=None, xlabel: str='X', ylabel: str='Y', zlabel: str='Z',
+                           line_width: int=2, labels_off: bool=False) -> vtk.vtkAxesActor:
         """Add axes actor at origin.
 
         Returns
@@ -428,8 +437,8 @@ class Renderer(vtkRenderer):
         self.Modified()
         return self.marker_actor
 
-    def add_orientation_widget(self, actor, interactive=None, color=None,
-                               opacity=1.0):
+    def add_orientation_widget(self, actor: [vtk.vtkActor, pyvista.Common], interactive: Optional[bool]=None,
+                               color: Optional[str]=None, opacity: Optional[Number]=1.0):
         """Use the given actor in an orientation marker widget.
 
         Color and opacity are only valid arguments if a mesh is passed.
@@ -474,10 +483,10 @@ class Renderer(vtkRenderer):
         self.Modified()
         return self.axes_widget
 
-    def add_axes(self, interactive=None, line_width=2,
-                 color=None, x_color=None, y_color=None, z_color=None,
-                 xlabel='X', ylabel='Y', zlabel='Z', labels_off=False,
-                 box=None, box_args=None):
+    def add_axes(self, interactive: Optional[bool]=None, line_width: float=2, color: Optional[Color]=None,
+                 x_color: Optional[Color]=None, y_color: Optional[Color]=None, z_color: Optional[Color]=None,
+                 xlabel: str='X', ylabel: str='Y', zlabel: str='Z', labels_off: bool=False,
+                 box: Optional[bool]=None, box_args: Optional[dict]=None) -> vtk.vtkAxesActor:
         """Add an interactive axes widget in the bottom left corner.
 
         Parameters
@@ -535,15 +544,15 @@ class Renderer(vtkRenderer):
             self.add_axes()
         self.Modified()
 
-    def show_bounds(self, mesh=None, bounds=None, show_xaxis=True,
-                    show_yaxis=True, show_zaxis=True, show_xlabels=True,
-                    show_ylabels=True, show_zlabels=True,
-                    bold=True, font_size=None,
-                    font_family=None, color=None,
-                    xlabel='X Axis', ylabel='Y Axis', zlabel='Z Axis',
-                    use_2d=False, grid=None, location='closest', ticks=None,
-                    all_edges=False, corner_factor=0.5, fmt=None,
-                    minor_ticks=False, padding=0.0, render=None):
+    def show_bounds(self, mesh: Optional[pyvista.PolyData, pyvista.UnstructuredGrid]=None,
+                    bounds: Optional[Sequence[float]]=None, show_xaxis: bool=True,
+                    show_yaxis: bool=True, show_zaxis: bool=True, show_xlabels=True,
+                    show_ylabels: bool=True, show_zlabels: bool=True,
+                    bold: bool=True, font_size: Optional[bool]=None, font_family: Optional[bool]=None,
+                    color: Optional[Color]=None, xlabel: str='X Axis', ylabel: str='Y Axis', zlabel: str='Z Axis',
+                    use_2d: bool=False, grid: Optional[Union[bool, str]]=None, location: str='closest',
+                    ticks: Optional[str]=None, all_edges: bool=False, corner_factor: float=0.5,
+                    fmt=None, minor_ticks: bool=False, padding: float=0.0, render=None) -> vtk.vtkCubeAxesActor:
         """Add bounds axes.
 
         Shows the bounds of the most recent input mesh unless mesh is specified.
@@ -818,7 +827,7 @@ class Renderer(vtkRenderer):
         self.Modified()
         return cube_axes_actor
 
-    def show_grid(self, **kwargs):
+    def show_grid(self, **kwargs) -> vtk.vtkCubeAxesActor:
         """Show gridlines and axes labels.
 
         A wrapped implementation of ``show_bounds`` to change default
@@ -832,7 +841,7 @@ class Renderer(vtkRenderer):
         kwargs.setdefault('ticks', 'both')
         return self.show_bounds(**kwargs)
 
-    def remove_bounding_box(self, render=True):
+    def remove_bounding_box(self, render: bool=True):
         """Remove bounding box."""
         if hasattr(self, '_box_object'):
             actor = self.bounding_box_actor
@@ -841,10 +850,10 @@ class Renderer(vtkRenderer):
             self.remove_actor(actor, reset_camera=False, render=render)
             self.Modified()
 
-    def add_bounding_box(self, color="grey", corner_factor=0.5, line_width=None,
-                         opacity=1.0, render_lines_as_tubes=False,
-                         lighting=None, reset_camera=None, outline=True,
-                         culling='front'):
+    def add_bounding_box(self, color="grey", corner_factor: float=0.5, line_width: Optional[float]=None,
+                         opacity: float=1.0, render_lines_as_tubes: bool=False,
+                         lighting: Optional[bool]=None, reset_camera: Optional[bool]=None, outline: bool=True,
+                         culling: str='front') -> Union[vtk.vtkActor, vtk.vtkProperty]:
         """Add an unlabeled and unticked box at the boundaries of plot.
 
         Useful for when wanting to plot outer grids while still retaining all
@@ -917,10 +926,11 @@ class Renderer(vtkRenderer):
         self.Modified()
         return self.bounding_box_actor
 
-    def add_floor(self, face='-z', i_resolution=10, j_resolution=10,
-                  color=None, line_width=None, opacity=1.0, show_edges=False,
-                  lighting=False, edge_color=None, reset_camera=None, pad=0.0,
-                  offset=0.0, pickable=False, store_floor_kwargs=True):
+    def add_floor(self, face: str='-z', i_resolution: int=10, j_resolution: int=10,
+                  color: Optional[Color]=None, line_width: Optional[int]=None, opacity: float=1.0,
+                  show_edges: bool=False, lighting: bool=False, edge_color: Optional[Color]=None,
+                  reset_camera: Optional[bool]=None, pad: float=0.0, offset: float=0.0, pickable: bool=False,
+                  store_floor_kwargs: bool=True):
         """Show a floor mesh.
 
         This generates planes at the boundaries of the scene to behave like
@@ -1051,7 +1061,7 @@ class Renderer(vtkRenderer):
         self._floors.append(actor)
         return actor
 
-    def remove_floors(self, clear_kwargs=True, render=True):
+    def remove_floors(self, clear_kwargs: bool=True, render: bool=True):
         """Remove all floor actors."""
         if getattr(self, '_floor', None) is not None:
             self._floor.ReleaseData()
@@ -1088,7 +1098,7 @@ class Renderer(vtkRenderer):
         self.camera.focus = scale_point(self.camera, point, invert=False)
         self.Modified()
 
-    def set_position(self, point, reset=False):
+    def set_position(self, point: Vector, reset: bool=False):
         """Set camera position to a point."""
         if isinstance(point, np.ndarray):
             if point.ndim != 1:
@@ -1099,7 +1109,7 @@ class Renderer(vtkRenderer):
         self.camera_set = True
         self.Modified()
 
-    def set_viewup(self, vector):
+    def set_viewup(self, vector: Vector):
         """Set camera viewup vector."""
         if isinstance(vector, np.ndarray):
             if vector.ndim != 1:
@@ -1123,28 +1133,28 @@ class Renderer(vtkRenderer):
         self.Modified()
 
     @property
-    def parallel_projection(self):
+    def parallel_projection(self) -> bool:
         """Return parallel projection state of active render window."""
         return self.camera.is_parallel_projection
 
     @parallel_projection.setter
-    def parallel_projection(self, state):
+    def parallel_projection(self, state: bool):
         """Set parallel projection state of all active render windows."""
         self.camera.enable_parallel_projection(state)
         self.Modified()
 
     @property
-    def parallel_scale(self):
+    def parallel_scale(self) -> float:
         """Return parallel scale of active render window."""
         return self.camera.parallel_scale
 
     @parallel_scale.setter
-    def parallel_scale(self, value):
+    def parallel_scale(self, value: float):
         """Set parallel scale of all active render windows."""
         self.camera.parallel_scale = value
         self.Modified()
 
-    def remove_actor(self, actor, reset_camera=False, render=True):
+    def remove_actor(self, actor: Union[vtk.vtkActor, Sequence], reset_camera: bool=False, render: bool=True) -> bool:
         """Remove an actor from the Renderer.
 
         Parameters
@@ -1214,7 +1224,8 @@ class Renderer(vtkRenderer):
         self.Modified()
         return True
 
-    def set_scale(self, xscale=None, yscale=None, zscale=None, reset_camera=True):
+    def set_scale(self, xscale: Optional[Number]=None, yscale: Optional[Number]=None,
+                  zscale: Optional[Number]=None, reset_camera: bool=True):
         """Scale all the datasets in the scene.
 
         Scaling in performed independently on the X, Y and Z axis.
@@ -1239,7 +1250,7 @@ class Renderer(vtkRenderer):
             self.reset_camera()
         self.Modified()
 
-    def get_default_cam_pos(self, negative=False):
+    def get_default_cam_pos(self, negative: bool=False) -> List[Vector]:
         """Return the default focal points and viewup.
 
         Uses ResetCamera to make a useful view.
@@ -1276,7 +1287,7 @@ class Renderer(vtkRenderer):
                 self.cube_axes_actor.SetUse2DMode(False)
             self.Modified()
 
-    def reset_camera(self, render=True):
+    def reset_camera(self, render: bool=True):
         """Reset the camera of the active render window.
 
         The camera slides along the vector defined from camera
@@ -1301,7 +1312,7 @@ class Renderer(vtkRenderer):
         """
         return self.view_isometric()
 
-    def view_isometric(self, negative=False):
+    def view_isometric(self, negative: bool=False):
         """Reset the camera to a default isometric view.
 
         The view will show all the actors in the scene.
@@ -1311,7 +1322,7 @@ class Renderer(vtkRenderer):
         self.camera_set = False
         return self.reset_camera()
 
-    def view_vector(self, vector, viewup=None):
+    def view_vector(self, vector: Vector, viewup: Optional[Vector]=None):
         """Point the camera in the direction of the given vector."""
         focal_pt = self.center
         if viewup is None:
@@ -1321,7 +1332,7 @@ class Renderer(vtkRenderer):
         self.camera_position = cpos
         return self.reset_camera()
 
-    def view_xy(self, negative=False):
+    def view_xy(self, negative: bool=False):
         """View the XY plane."""
         vec = np.array([0,0,1])
         viewup = np.array([0,1,0])
@@ -1329,7 +1340,7 @@ class Renderer(vtkRenderer):
             vec *= -1
         return self.view_vector(vec, viewup)
 
-    def view_yx(self, negative=False):
+    def view_yx(self, negative: bool=False):
         """View the YX plane."""
         vec = np.array([0,0,-1])
         viewup = np.array([1,0,0])
@@ -1337,7 +1348,7 @@ class Renderer(vtkRenderer):
             vec *= -1
         return self.view_vector(vec, viewup)
 
-    def view_xz(self, negative=False):
+    def view_xz(self, negative: bool=False):
         """View the XZ plane."""
         vec = np.array([0,-1,0])
         viewup = np.array([0,0,1])
@@ -1345,7 +1356,7 @@ class Renderer(vtkRenderer):
             vec *= -1
         return self.view_vector(vec, viewup)
 
-    def view_zx(self, negative=False):
+    def view_zx(self, negative: bool=False):
         """View the ZX plane."""
         vec = np.array([0,1,0])
         viewup = np.array([1,0,0])
@@ -1403,7 +1414,7 @@ class Renderer(vtkRenderer):
         self.Modified()
         return
 
-    def get_pick_position(self):
+    def get_pick_position(self) -> Tuple[int, int, int, int]:
         """Get the pick position/area as x0, y0, x1, y1."""
         x0 = int(self.GetPickX1())
         x1 = int(self.GetPickX2())
@@ -1411,7 +1422,7 @@ class Renderer(vtkRenderer):
         y1 = int(self.GetPickY2())
         return x0, y0, x1, y1
 
-    def set_background(self, color, top=None):
+    def set_background(self, color: Color, top: Optional[Color]=None):
         """Set the background color.
 
         Parameters
@@ -1476,7 +1487,7 @@ class Renderer(vtkRenderer):
         self.deep_clean()
 
 
-def _remove_mapper_from_plotter(plotter, actor, reset_camera, render=False):
+def _remove_mapper_from_plotter(plotter: pyvista.BasePlotter, actor, reset_camera: bool, render: bool=False):
     """Remove this actor's mapper from the given plotter's _scalar_bar_mappers."""
     try:
         mapper = actor.GetMapper()
