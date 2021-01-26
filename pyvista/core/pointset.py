@@ -1,10 +1,11 @@
 """Sub-classes and wrappers for vtk.vtkPointSet."""
-import pathlib
-import logging
-import os
-import warnings
-import numbers
 import collections
+import logging
+import numbers
+import os
+import pathlib
+import warnings
+from typing import Union, Tuple, List, Iterable, Optional, Dict
 
 import numpy as np
 import vtk
@@ -35,7 +36,7 @@ class PointSet(Common):
     This holds methods common to PolyData and UnstructuredGrid.
     """
 
-    def center_of_mass(self, scalars_weight=False):
+    def center_of_mass(self, scalars_weight=False) -> np.ndarray:
         """Return the coordinates for the center of mass of the mesh.
 
         Parameters
@@ -55,14 +56,14 @@ class PointSet(Common):
         alg.Update()
         return np.array(alg.GetCenter())
 
-    def shallow_copy(self, to_copy):
+    def shallow_copy(self, to_copy: [vtk.vtkPointSet, 'PointSet']) -> 'PointSet':
         """Do a shallow copy the pointset."""
         # Set default points if needed
         if not to_copy.GetPoints():
             to_copy.SetPoints(vtk.vtkPoints())
         return Common.shallow_copy(self, to_copy)
 
-    def remove_cells(self, ind, inplace=True):
+    def remove_cells(self, ind: Iterable[Union[int, bool]], inplace=True) -> Optional['PointSet']:
         """Remove cells.
 
         Parameters
@@ -189,52 +190,52 @@ class PolyData(vtkPolyData, PointSet, PolyDataFilters):
             # make vertex cells
             self.verts = self._make_vertex_cells(self.n_points)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the standard representation."""
         return Common.__repr__(self)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the standard str representation."""
         return Common.__str__(self)
 
     @staticmethod
-    def _make_vertex_cells(npoints):
+    def _make_vertex_cells(npoints: np.ndarray) -> np.ndarray:
         cells = np.empty((npoints, 2), dtype=pyvista.ID_TYPE)
         cells[:, 0] = 1
         cells[:, 1] = np.arange(npoints, dtype=pyvista.ID_TYPE)
         return cells
 
     @property
-    def verts(self):
+    def verts(self) -> np.ndarray:
         """Get the vertex cells."""
         return vtk_to_numpy(self.GetVerts().GetData())
 
     @verts.setter
-    def verts(self, verts):
+    def verts(self, verts: [np.ndarray, vtk.vtkCellArray]):
         """Set the vertex cells."""
         self.SetVerts(CellArray(verts))
 
     @property
-    def lines(self):
+    def lines(self) -> np.ndarray:
         """Return a pointer to the lines as a numpy object."""
         return vtk_to_numpy(self.GetLines().GetData()).ravel()
 
     @lines.setter
-    def lines(self, lines):
+    def lines(self, lines: [np.ndarray, vtk.vtkCellArray]):
         """Set the lines of the polydata."""
         self.SetLines(CellArray(lines))
 
     @property
-    def faces(self):
+    def faces(self) -> np.ndarray:
         """Return a pointer to the points as a numpy object."""
         return vtk_to_numpy(self.GetPolys().GetData())
 
     @faces.setter
-    def faces(self, faces):
+    def faces(self, faces: [np.ndarray, vtk.vtkCellArray]):
         """Set the face cells."""
         self.SetPolys(CellArray(faces))
 
-    def is_all_triangles(self):
+    def is_all_triangles(self) -> bool:
         """Return True if all the faces of the polydata are triangles."""
         # Need to make sure there are only face cells and no lines/verts
         if not len(self.faces) or len(self.lines) > 0 or len(self.verts) > 0:
@@ -242,7 +243,7 @@ class PolyData(vtkPolyData, PointSet, PolyDataFilters):
         # All we have are faces, check if all faces are indeed triangles
         return self.faces.size % 4 == 0 and (self.faces.reshape(-1, 4)[:, 0] == 3).all()
 
-    def _from_arrays(self, vertices, faces, deep=True, verts=False):
+    def _from_arrays(self, vertices: np.ndarray, faces: np.ndarray, deep=True, verts=False):
         """Set polygons and points from numpy arrays.
 
         Parameters
@@ -277,12 +278,12 @@ class PolyData(vtkPolyData, PointSet, PolyDataFilters):
         else:
             self.SetPolys(CellArray(faces))
 
-    def __sub__(self, cutting_mesh):
+    def __sub__(self, cutting_mesh: pyvista.PolyData) -> pyvista.PolyData:
         """Subtract two meshes."""
         return self.boolean_cut(cutting_mesh)
 
     @property
-    def n_faces(self):
+    def n_faces(self) -> int:
         """Return the number of cells.
 
         Alias for ``n_cells``.
@@ -291,11 +292,11 @@ class PolyData(vtkPolyData, PointSet, PolyDataFilters):
         return self.n_cells
 
     @property
-    def number_of_faces(self):
+    def number_of_faces(self) -> int:
         """Return the number of cells."""
         return self.n_cells
 
-    def save(self, filename, binary=True):
+    def save(self, filename: str, binary=True):
         """Write a surface mesh to disk.
 
         Written file may be an ASCII or binary ply, stl, or vtk mesh
@@ -328,7 +329,7 @@ class PolyData(vtkPolyData, PointSet, PolyDataFilters):
         super().save(filename, binary)
 
     @property
-    def area(self):
+    def area(self) -> float:
         """Return the mesh surface area.
 
         Returns
@@ -341,7 +342,7 @@ class PolyData(vtkPolyData, PointSet, PolyDataFilters):
         return np.sum(areas)
 
     @property
-    def volume(self):
+    def volume(self) -> float:
         """Return the mesh volume.
 
         This will throw a VTK error/warning if not a closed surface
@@ -357,24 +358,24 @@ class PolyData(vtkPolyData, PointSet, PolyDataFilters):
         return mprop.GetVolume()
 
     @property
-    def point_normals(self):
+    def point_normals(self) -> 'pyvista.pyvista_ndarray'':
         """Return the point normals."""
         mesh = self.compute_normals(cell_normals=False, inplace=False)
         return mesh.point_arrays['Normals']
 
     @property
-    def cell_normals(self):
+    def cell_normals(self) -> 'pyvista.pyvista_ndarray':
         """Return the cell normals."""
         mesh = self.compute_normals(point_normals=False, inplace=False)
         return mesh.cell_arrays['Normals']
 
     @property
-    def face_normals(self):
+    def face_normals(self) -> 'pyvista.pyvista_ndarray':
         """Return the cell normals."""
         return self.cell_normals
 
     @property
-    def obbTree(self):
+    def obbTree(self) -> vtk.vtkOBBTree:
         """Return the obbTree of the polydata.
 
         An obbTree is an object to generate oriented bounding box (OBB)
@@ -391,7 +392,7 @@ class PolyData(vtkPolyData, PointSet, PolyDataFilters):
         return self._obbTree
 
     @property
-    def n_open_edges(self):
+    def n_open_edges(self) -> int:
         """Return the number of open edges on this mesh."""
         alg = vtk.vtkFeatureEdges()
         alg.FeatureEdgesOff()
@@ -416,7 +417,8 @@ class PointGrid(PointSet):
         """Initialize the point grid."""
         super().__init__()
 
-    def plot_curvature(self, curv_type='mean', **kwargs):
+    # TODO, exact List type?
+    def plot_curvature(self, curv_type='mean', **kwargs) -> List:
         """Plot the curvature of the external surface of the grid.
 
         Parameters
@@ -443,7 +445,7 @@ class PointGrid(PointSet):
         return trisurf.plot_curvature(curv_type, **kwargs)
 
     @property
-    def volume(self):
+    def volume(self) -> float:
         """Compute the volume of the point grid.
 
         This extracts the external surface and computes the interior volume
@@ -556,15 +558,15 @@ class UnstructuredGrid(vtkUnstructuredGrid, PointGrid, UnstructuredGridFilters):
             else:
                 raise TypeError(err_msg + '(`offset` optional), `cells`, `cell_type`, `points`')
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the standard representation."""
         return Common.__repr__(self)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the standard str representation."""
         return Common.__str__(self)
 
-    def _from_cells_dict(self, cells_dict, points, deep=True):
+    def _from_cells_dict(self, cells_dict: Dict[int, np.ndarry], points: np.ndarray, deep=True):
         if points.ndim != 2 or points.shape[-1] != 3:
             raise ValueError("Points array must be a [M, 3] array")
 
@@ -577,8 +579,8 @@ class UnstructuredGrid(vtkUnstructuredGrid, PointGrid, UnstructuredGridFilters):
             self._from_arrays(offset, cells, cell_types, points, deep=deep)
 
 
-
-    def _from_arrays(self, offset, cells, cell_type, points, deep=True):
+    # TODO, type hints, formatting
+    def _from_arrays(self, offset: np.ndarray, cells: np.ndarray, cell_type: np.uint8, points: np.ndarray, deep=True):
         """Create VTK unstructured grid from numpy arrays.
 
         Parameters
@@ -675,10 +677,11 @@ class UnstructuredGrid(vtkUnstructuredGrid, PointGrid, UnstructuredGridFilters):
                                  f'must match the number of cells ({self.n_cells})')
 
     @property
-    def cells(self):
+    def cells(self) -> np.ndarray:
         """Legacy method: Return a pointer to the cells as a numpy object."""
         return vtk_to_numpy(self.GetCells().GetData())
 
+    # TODO, type hints, Dict type?
     @property
     def cells_dict(self):
         """Return a dictionary that contains all cells mapped from cell types.
@@ -696,7 +699,7 @@ class UnstructuredGrid(vtkUnstructuredGrid, PointGrid, UnstructuredGridFilters):
         return get_mixed_cells(self)
 
     @property
-    def cell_connectivity(self):
+    def cell_connectivity(self) -> np.ndarray:
         """Return a the vtk cell connectivity as a numpy array."""
         carr = self.GetCells()
         if VTK9:
@@ -704,7 +707,7 @@ class UnstructuredGrid(vtkUnstructuredGrid, PointGrid, UnstructuredGridFilters):
         raise AttributeError('Install vtk>=9.0.0 for `cell_connectivity`\n'
                              'Otherwise, use the legacy `cells` method')
 
-    def linear_copy(self, deep=False):
+    def linear_copy(self, deep=False) -> pyvista.UnstructuredGrid:
         """Return a copy of the unstructured grid containing only linear cells.
 
         Converts the following cell types to their linear equivalents.
@@ -782,12 +785,12 @@ class UnstructuredGrid(vtkUnstructuredGrid, PointGrid, UnstructuredGridFilters):
         return lgrid
 
     @property
-    def celltypes(self):
+    def celltypes(self) -> np.ndarray:
         """Get the cell types array."""
         return vtk_to_numpy(self.GetCellTypesArray())
 
     @property
-    def offset(self):
+    def offset(self) -> np.ndarray:
         """Get cell locations Array."""
         carr = self.GetCells()
         if VTK9:
@@ -852,15 +855,15 @@ class StructuredGrid(vtkStructuredGrid, PointGrid, StructuredGridFilters):
             if all([arg0_is_arr, arg1_is_arr, arg2_is_arr]):
                 self._from_arrays(args[0], args[1], args[2])
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return the standard representation."""
         return Common.__repr__(self)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the standard str representation."""
         return Common.__str__(self)
 
-    def _from_arrays(self, x, y, z):
+    def _from_arrays(self, x: np.ndarray, y: np.ndarray, z: np.ndarray):
         """Create VTK structured grid directly from numpy arrays.
 
         Parameters
@@ -893,45 +896,47 @@ class StructuredGrid(vtkStructuredGrid, PointGrid, StructuredGridFilters):
         self.SetDimensions(dim)
         self.SetPoints(pyvista.vtk_points(points))
 
+    # TODO, type hints inaccurate docstring,
     @property
     def dimensions(self):
         """Return a length 3 tuple of the grid's dimensions."""
         return list(self.GetDimensions())
 
     @dimensions.setter
-    def dimensions(self, dims):
+    def dimensions(self, dims: Tuple[int, int, int]):
         """Set the dataset dimensions. Pass a length three tuple of integers."""
         nx, ny, nz = dims[0], dims[1], dims[2]
         self.SetDimensions(nx, ny, nz)
         self.Modified()
 
     @property
-    def x(self):
+    def x(self) -> np.ndarray:
         """Return the X coordinates of all points."""
         return self._reshape_point_array(self.points[:, 0])
 
     @property
-    def y(self):
+    def y(self) -> np.ndarray:
         """Return the Y coordinates of all points."""
         return self._reshape_point_array(self.points[:, 1])
 
     @property
-    def z(self):
+    def z(self) -> np.ndarray:
         """Return the Z coordinates of all points."""
         return self._reshape_point_array(self.points[:, 2])
 
     @property
-    def points_matrix(self):
+    def points_matrix(self) -> np.ndarray:
         """Points as a 4-D matrix, with x/y/z along the last dimension."""
         return self.points.reshape((*self.dimensions, 3), order='F')
 
-    def _get_attrs(self):
+    def _get_attrs(self) -> List[Tuple]:
         """Return the representation methods (internal helper)."""
         attrs = PointGrid._get_attrs(self)
         attrs.append(("Dimensions", self.dimensions, "{:d}, {:d}, {:d}"))
         return attrs
 
-    def __getitem__(self, key):
+    # TODO, type hints, return type?
+    def __getitem__(self, key: [Tuple]):
         """Slice subsets of the StructuredGrid, or extract an array field."""
         # legacy behavior which looks for a point or cell array
         if not isinstance(key, tuple):
@@ -957,7 +962,7 @@ class StructuredGrid(vtkStructuredGrid, PointGrid, StructuredGridFilters):
 
         return self.extract_subset(voi, rate, boundary=False)
 
-    def hide_cells(self, ind):
+    def hide_cells(self, ind: Iterable[int, bool]):
         """Hide cells without deleting them.
 
         Hides cells by setting the ghost_cells array to HIDDEN_CELL.
@@ -997,11 +1002,11 @@ class StructuredGrid(vtkStructuredGrid, PointGrid, StructuredGridFilters):
 
         self.cell_arrays[vtk.vtkDataSetAttributes.GhostArrayName()] = ghost_cells
 
-    def _reshape_point_array(self, array):
+    def _reshape_point_array(self, array: np.ndarray) -> np.ndarray:
         """Reshape point data to a 3-D matrix."""
         return array.reshape(self.dimensions, order='F')
 
-    def _reshape_cell_array(self, array):
+    def _reshape_cell_array(self, array: np.ndarray) -> np.ndarray:
         """Reshape cell data to a 3-D matrix."""
         cell_dims = np.array(self.dimensions) - 1
         cell_dims[cell_dims == 0] = 1
