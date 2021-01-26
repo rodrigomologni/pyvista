@@ -145,7 +145,7 @@ def set_plot_theme(theme: str):
             rcParams[k] = v
 
 
-def parse_color(color, opacity: Optional[float]=None) -> Color:
+def parse_color(color: Color, opacity: Optional[float]=None) -> Color:
     """Parse color into a vtk friendly rgb list.
 
     Values returned will be between 0 and 1.
