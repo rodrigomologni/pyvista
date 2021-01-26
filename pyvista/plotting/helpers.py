@@ -1,19 +1,27 @@
 """This module contains some convenience helper functions."""
+from typing import Optional, List, Union
 
+import itkwidgets
 import numpy as np
 import scooby
+import vtk
 
 import pyvista
 from pyvista.utilities import is_pyvista_dataset, assert_empty_kwargs
 from .plotting import Plotter
 from .theme import rcParams
 
+# TODO, type hints, undocumented parameters: interactive, background, return_image, parallel_projection
+from ..typing import NumericArray, Vector
 
-def plot(var_item, off_screen=None, full_screen=False, screenshot=None,
-         interactive=True, cpos=None, window_size=None,
-         show_bounds=False, show_axes=True, notebook=None, background=None,
-         text='', return_img=False, eye_dome_lighting=False, volume=False,
-         parallel_projection=False, use_ipyvtk=None, **kwargs):
+
+def plot(var_item: [vtk.vtkObject, np.ndarray], off_screen: Optional[bool]=None,
+         full_screen: bool=False, screenshot: Optional[str, bool]=None,
+         interactive: bool=True, cpos: Optional[List]=None, window_size: Optional[List]=None,
+         show_bounds: bool=False, show_axes: bool=True, notebook: Optional[bool]=None,
+         background=None, text: str='', return_img: bool=False, eye_dome_lighting: bool=False,
+         volume: bool=False, parallel_projection=False,
+         use_ipyvtk: Optional[bool]=None, **kwargs) -> NumericArray[List, np.ndarray]:
     """Plot a vtk or numpy object.
 
     Parameters
@@ -150,7 +158,7 @@ def plot(var_item, off_screen=None, full_screen=False, screenshot=None,
     return result
 
 
-def plot_arrows(cent, direction, **kwargs):
+def plot_arrows(cent: np.ndarray, direction: np.ndarray, **kwargs) -> NumericArray[List, np.ndarray]:
     """Plot arrows as vectors.
 
     Parameters
@@ -191,6 +199,7 @@ def plot_arrows(cent, direction, **kwargs):
     return plot([cent, direction], **kwargs)
 
 
+# TODO, type hints, unknown parameter types.
 def plot_compare_four(data_a, data_b, data_c, data_d, disply_kwargs=None,
                       plotter_kwargs=None, show_kwargs=None, screenshot=None,
                       camera_position=None, outline=None, outline_color='k',
@@ -230,8 +239,9 @@ def plot_compare_four(data_a, data_b, data_c, data_d, disply_kwargs=None,
     return p.show(screenshot=screenshot, **show_kwargs)
 
 
-def plot_itk(mesh, color=None, scalars=None, opacity=1.0,
-             smooth_shading=False):
+def plot_itk(mesh: Union[pyvista.Common, pyvista.MultiBlock], color: Union[str, Vector],
+             scalars: Optional[str, np.ndarray]=None, opacity: Optional[float]=1.0,
+             smooth_shading: bool=False) -> itkwidgets.Viewer:
     """Plot a PyVista/VTK mesh or dataset.
 
     Adds any PyVista/VTK mesh that itkwidgets can wrap to the
