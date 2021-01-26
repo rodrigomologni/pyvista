@@ -1,10 +1,14 @@
 """PyVista-like ITKwidgets plotter."""
+from collections import Sequence
+
 import numpy as np
 from scooby import meets_version
+from typing import List, Optional
 
 import pyvista
 import pyvista as pv
 from .theme import parse_color
+from ..typing import Color, Vector
 
 HAS_ITK = False
 ITK_EXCEPTION = None
@@ -55,7 +59,8 @@ class PlotterITK():
         self._point_set_sizes = []
         self._point_set_representations = []
 
-    def add_points(self, points, color=None, point_size=3.0):
+    def add_points(self, points: [np.ndarray, pyvista.Common], color: Optional[str, List]=None,
+                   point_size: float=3.0):
         """Add points to plotter.
 
         Parameters
@@ -104,8 +109,9 @@ class PlotterITK():
         self._point_sets.append(point_array)
         # self._point_set_representations.append(style)
 
-    def add_mesh(self, mesh, color=None, scalars=None,
-                 opacity=1.0, smooth_shading=False):
+    def add_mesh(self, mesh: [pyvista.Common, pyvista.MultiBlock], color: Optional[Color]=None,
+                 scalars: Optional[str, np.ndarray]=None, opacity: Optional[float]=1.0,
+                 smooth_shading: Optional[bool]=False):
         """Add a PyVista/VTK mesh or dataset.
 
         Adds any PyVista/VTK mesh that itkwidgets can wrap to the
@@ -192,12 +198,12 @@ class PlotterITK():
         self._geometry_opacities.append(opacity)
 
     @property
-    def background_color(self):
+    def background_color(self) -> Optional[Color]:
         """Return the background color of the plotter."""
         return self._background_color
 
     @background_color.setter
-    def background_color(self, color):
+    def background_color(self, color: Color):
         """Set the background color of the plotter.
 
         Examples
@@ -209,13 +215,13 @@ class PlotterITK():
         self._background_color = parse_color(color)
 
     @property
-    def camera_position(self):
+    def camera_position(self) -> Optional[Sequence[Vector]]:
         """Return camera position of the plotter as a list."""
         if self._camera_position is not None:
             return self._camera_position
 
     @camera_position.setter
-    def camera_position(self, camera_location):
+    def camera_position(self, camera_location: Sequence[Vector]):
         """Set camera position of the plotter."""
         if isinstance(camera_location, str):
             raise ValueError('String camera positions are not supported in PlotterITK')
