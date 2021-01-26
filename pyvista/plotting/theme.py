@@ -1,10 +1,12 @@
 """Module managing different plotting theme parameters."""
 
 import os
+from typing import Optional
 
 import vtk
 
 from .colors import string_to_rgb, PARAVIEW_BACKGROUND
+from ..typing import Color
 
 MAX_N_COLOR_BARS = 10
 FONT_KEYS = {'arial': vtk.VTK_ARIAL,
@@ -98,7 +100,7 @@ rcParams = {
 
 DEFAULT_THEME = dict(rcParams)
 
-def set_plot_theme(theme):
+def set_plot_theme(theme: str):
     """Set the plotting parameters to a predefined theme."""
     if theme.lower() in ['paraview', 'pv']:
         rcParams['background'] = PARAVIEW_BACKGROUND
@@ -143,7 +145,7 @@ def set_plot_theme(theme):
             rcParams[k] = v
 
 
-def parse_color(color, opacity=None):
+def parse_color(color, opacity: Optional[float]=None) -> Color:
     """Parse color into a vtk friendly rgb list.
 
     Values returned will be between 0 and 1.
@@ -170,7 +172,7 @@ def parse_color(color, opacity=None):
     return color
 
 
-def parse_font_family(font_family):
+def parse_font_family(font_family: str) -> int:
     """Check font name."""
     # check font name
     font_family = font_family.lower()
