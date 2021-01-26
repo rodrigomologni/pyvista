@@ -156,6 +156,10 @@ yellowgreen
 """
 
 # shamelessly copied from matplotlib.colors
+from param import Tuple
+
+from pyvista.typing import Vector
+
 hexcolors = {
     'aliceblue':            '#F0F8FF',
     'antiquewhite':         '#FAEBD7',
@@ -321,13 +325,13 @@ color_char_to_word = {
 PARAVIEW_BACKGROUND = [82/255., 87/255., 110/255.]
 
 
-def hex_to_rgb(h):
+def hex_to_rgb(h) -> Tuple[float, ...]:
     """Return 0 to 1 rgb from a hex list or tuple."""
     h = h.lstrip('#')
     return tuple(int(h[i:i+2], 16)/255. for i in (0, 2, 4))
 
 
-def string_to_rgb(string):
+def string_to_rgb(string) -> Vector:
     """Convert a literal color string (i.e. white) to a color rgb.
 
     Also accepts hex strings or single characters from the following list.
@@ -369,7 +373,7 @@ def string_to_rgb(string):
 
     return hex_to_rgb(colorhex)
 
-
+# TODO, type hints, return/input types
 def get_cmap_safe(cmap):
     """Fetch a colormap by name from matplotlib, colorcet, or cmocean."""
     try:
