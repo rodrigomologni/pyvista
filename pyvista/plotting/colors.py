@@ -158,7 +158,7 @@ yellowgreen
 # shamelessly copied from matplotlib.colors
 from param import Tuple
 
-from pyvista.typing import Vector
+from pyvista.typing import Color
 
 hexcolors = {
     'aliceblue':            '#F0F8FF',
@@ -325,13 +325,13 @@ color_char_to_word = {
 PARAVIEW_BACKGROUND = [82/255., 87/255., 110/255.]
 
 
-def hex_to_rgb(h) -> Tuple[float, ...]:
+def hex_to_rgb(h) -> Color:
     """Return 0 to 1 rgb from a hex list or tuple."""
     h = h.lstrip('#')
     return tuple(int(h[i:i+2], 16)/255. for i in (0, 2, 4))
 
 
-def string_to_rgb(string) -> Vector:
+def string_to_rgb(string) -> Color:
     """Convert a literal color string (i.e. white) to a color rgb.
 
     Also accepts hex strings or single characters from the following list.
