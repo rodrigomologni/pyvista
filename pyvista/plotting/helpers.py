@@ -11,17 +11,17 @@ from pyvista.utilities import is_pyvista_dataset, assert_empty_kwargs
 from .plotting import Plotter
 from .theme import rcParams
 
+from ..typing import NumericArray, Color
+
+
 # TODO, type hints, undocumented parameters: interactive, background, return_image, parallel_projection
-from ..typing import NumericArray, Vector
-
-
 def plot(var_item: [vtk.vtkObject, np.ndarray], off_screen: Optional[bool]=None,
-         full_screen: bool=False, screenshot: Optional[str, bool]=None,
+         full_screen: bool=False, screenshot: Optional[Union[str, bool]]=None,
          interactive: bool=True, cpos: Optional[List]=None, window_size: Optional[List]=None,
          show_bounds: bool=False, show_axes: bool=True, notebook: Optional[bool]=None,
          background=None, text: str='', return_img: bool=False, eye_dome_lighting: bool=False,
          volume: bool=False, parallel_projection=False,
-         use_ipyvtk: Optional[bool]=None, **kwargs) -> NumericArray[List, np.ndarray]:
+         use_ipyvtk: Optional[bool]=None, **kwargs) -> NumericArray:
     """Plot a vtk or numpy object.
 
     Parameters
@@ -158,7 +158,7 @@ def plot(var_item: [vtk.vtkObject, np.ndarray], off_screen: Optional[bool]=None,
     return result
 
 
-def plot_arrows(cent: np.ndarray, direction: np.ndarray, **kwargs) -> NumericArray[List, np.ndarray]:
+def plot_arrows(cent: np.ndarray, direction: np.ndarray, **kwargs) -> NumericArray:
     """Plot arrows as vectors.
 
     Parameters
@@ -239,8 +239,8 @@ def plot_compare_four(data_a, data_b, data_c, data_d, disply_kwargs=None,
     return p.show(screenshot=screenshot, **show_kwargs)
 
 
-def plot_itk(mesh: Union[pyvista.Common, pyvista.MultiBlock], color: Union[str, Vector],
-             scalars: Optional[str, np.ndarray]=None, opacity: Optional[float]=1.0,
+def plot_itk(mesh: Union['pyvista.Common', 'pyvista.MultiBlock'], color: Color,
+             scalars: Optional[Union[str, np.ndarray]]=None, opacity: Optional[float]=1.0,
              smooth_shading: bool=False) -> itkwidgets.Viewer:
     """Plot a PyVista/VTK mesh or dataset.
 

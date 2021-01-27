@@ -1,9 +1,8 @@
 """PyVista-like ITKwidgets plotter."""
-from collections import Sequence
 
 import numpy as np
 from scooby import meets_version
-from typing import List, Optional
+from typing import Optional, Sequence, Union
 
 import pyvista
 import pyvista as pv
@@ -59,7 +58,7 @@ class PlotterITK():
         self._point_set_sizes = []
         self._point_set_representations = []
 
-    def add_points(self, points: [np.ndarray, pyvista.Common], color: Optional[str, List]=None,
+    def add_points(self, points: [np.ndarray, 'pyvista.Common'], color: Color=None,
                    point_size: float=3.0):
         """Add points to plotter.
 
@@ -109,8 +108,8 @@ class PlotterITK():
         self._point_sets.append(point_array)
         # self._point_set_representations.append(style)
 
-    def add_mesh(self, mesh: [pyvista.Common, pyvista.MultiBlock], color: Optional[Color]=None,
-                 scalars: Optional[str, np.ndarray]=None, opacity: Optional[float]=1.0,
+    def add_mesh(self, mesh: ['pyvista.Common', 'pyvista.MultiBlock'], color: Optional[Color]=None,
+                 scalars: Optional[Union[str, np.ndarray]]=None, opacity: Optional[float]=1.0,
                  smooth_shading: Optional[bool]=False):
         """Add a PyVista/VTK mesh or dataset.
 

@@ -10,7 +10,6 @@ import numpy as np
 import vtk
 
 import pyvista
-from pyvista import pyvista_ndarray
 from pyvista.utilities import (FieldAssociation, assert_empty_kwargs, get_array,
                                row_array)
 from .common import DataObject
@@ -96,7 +95,7 @@ class Table(vtk.vtkTable, DataObject):
         """
         return self.n_columns
 
-    def _row_array(self, name=None) -> pyvista_ndarray:
+    def _row_array(self, name=None) -> 'pyvista.pyvista_ndarray':
         """Return row scalars of a vtk object.
 
         Parameters
@@ -121,11 +120,11 @@ class Table(vtk.vtkTable, DataObject):
         """Return the table keys."""
         return self.row_arrays.keys()
 
-    def items(self) -> List[Tuple[str, pyvista_ndarray]]:
+    def items(self) -> List[Tuple[str, 'pyvista.pyvista_ndarray']]:
         """Return the table items."""
         return self.row_arrays.items()
 
-    def values(self) -> List[pyvista_ndarray]:
+    def values(self) -> List['pyvista.pyvista_ndarray']:
         """Return the table values."""
         return self.row_arrays.values()
 
@@ -133,7 +132,7 @@ class Table(vtk.vtkTable, DataObject):
         """Set the table data."""
         self.row_arrays.update(data)
 
-    def pop(self, name: str) -> pyvista_ndarray:
+    def pop(self, name: str) -> 'pyvista.pyvista_ndarray':
         """Pops off an array by the specified name."""
         return self.row_arrays.pop(name)
 
@@ -155,14 +154,14 @@ class Table(vtk.vtkTable, DataObject):
         """
         self.row_arrays[name] = scalars
 
-    def __getitem__(self, index: str) -> pyvista_ndarray:
+    def __getitem__(self, index: str) -> 'pyvista.pyvista_ndarray':
         """Search row data for an array."""
         return self._row_array(name=index)
 
     def _ipython_key_completions_(self) -> List[str]:
         return self.keys()
 
-    def get(self, index: str) -> pyvista_ndarray:
+    def get(self, index: str) -> 'pyvista.pyvista_ndarray':
         """Get an array by its name."""
         return self[index]
 
@@ -179,7 +178,7 @@ class Table(vtk.vtkTable, DataObject):
         """Remove an array by the specified name."""
         del self.row_arrays[name]
 
-    def __iter__(self) -> Iterator[pyvista_ndarray]:
+    def __iter__(self) -> Iterator['pyvista.pyvista_ndarray']:
         """Return the iterator across all arrays."""
         for array_name in self.row_arrays:
             yield self.row_arrays[array_name]
@@ -325,7 +324,7 @@ class Texture(vtk.vtkTexture, DataObject):
         image = texture.GetInput()
         self._from_image_data(image)
 
-    def _from_image_data(self, image: pyvista.UniformGrid) -> vtk.vtkAlgorithm:
+    def _from_image_data(self, image: 'pyvista.UniformGrid') -> vtk.vtkAlgorithm:
         if not isinstance(image, pyvista.UniformGrid):
             image = pyvista.UniformGrid(image)
         self.SetInputDataObject(image)

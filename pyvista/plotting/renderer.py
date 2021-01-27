@@ -1,20 +1,19 @@
 """Module containing pyvista implementation of vtkRenderer."""
+from __future__ import annotations
 
 import collections.abc
-import logging
-from collections import Sequence
+from typing import List, Optional, Sequence, Tuple, Union
 from weakref import proxy
 
 import numpy as np
 import vtk
-from typing import List, Optional, Tuple, Union
 from vtk import vtkRenderer
 
 import pyvista
 from pyvista.utilities import wrap, check_depth_peeling
+from .camera import Camera
 from .theme import parse_color, parse_font_family, rcParams, MAX_N_COLOR_BARS
 from .tools import create_axes_orientation_box, create_axes_marker
-from .camera import Camera
 from ..typing import Vector, Color, Number
 
 
@@ -544,7 +543,7 @@ class Renderer(vtkRenderer):
             self.add_axes()
         self.Modified()
 
-    def show_bounds(self, mesh: Optional[pyvista.PolyData, pyvista.UnstructuredGrid]=None,
+    def show_bounds(self, mesh: Optional[Union['pyvista.PolyData', 'pyvista.UnstructuredGrid']]=None,
                     bounds: Optional[Sequence[float]]=None, show_xaxis: bool=True,
                     show_yaxis: bool=True, show_zaxis: bool=True, show_xlabels=True,
                     show_ylabels: bool=True, show_zlabels: bool=True,

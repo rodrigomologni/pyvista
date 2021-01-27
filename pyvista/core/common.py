@@ -3,13 +3,12 @@
 import collections.abc
 import logging
 from pathlib import Path
-from typing import Optional, List, Tuple, Iterable
+from typing import Optional, List, Tuple, Iterable, Union
 
 import numpy as np
 import vtk
 
 import pyvista
-from pyvista import pyvista_ndarray
 from pyvista.utilities import (FieldAssociation, get_array, is_pyvista_dataset,
                                raise_not_matching, vtk_id_list_to_array, fileio,
                                abstract_class, axis_rotation)
@@ -120,7 +119,7 @@ class DataObject:
         writer.SetInputData(self)
         writer.Write()
 
-    def get_data_range(self, arr: Optional[str, np.ndarray]=None, preference='field'):  # pragma: no cover
+    def get_data_range(self, arr: Optional[Union[str, np.ndarray]]=None, preference='field'):  # pragma: no cover
         """Get the non-NaN min and max of a named array.
 
         Parameters
@@ -289,7 +288,7 @@ class Common(DataSetFilters, DataObject):
         return self._active_tensors_info
 
     @property
-    def active_vectors(self) -> pyvista_ndarray:
+    def active_vectors(self) -> 'pyvista.pyvista_ndarray':
         """Return the active vectors array."""
         field, name = self.active_vectors_info
         if name:
@@ -339,14 +338,14 @@ class Common(DataSetFilters, DataObject):
         self.set_active_scalars(name)
 
     @property
-    def points(self) -> pyvista_ndarray:
+    def points(self) -> 'pyvista.pyvista_ndarray':
         """Return a pointer to the points as a numpy object."""
         pts = self.GetPoints()
         if pts is None:
             return None
         vtk_data = pts.GetData()
         # arr = vtk_to_numpy(vtk_data)
-        return pyvista_ndarray(vtk_data, dataset=self)
+        return pyvista.pyvista_ndarray(vtk_data, dataset=self)
 
     @points.setter
     def points(self, points: np.ndarray):
@@ -363,7 +362,7 @@ class Common(DataSetFilters, DataObject):
         self.Modified()
 
     @property
-    def arrows(self) -> pyvista.PolyData:
+    def arrows(self) -> 'pyvista.PolyData':
         """Return a glyph representation of the active vector data as arrows.
 
         Arrows will be located at the points of the mesh and
@@ -381,7 +380,7 @@ class Common(DataSetFilters, DataObject):
             return self.glyph(scale=name, orient=name)
 
     @property
-    def vectors(self) -> pyvista_ndarray:
+    def vectors(self) -> 'pyvista.pyvista_ndarray':
         """Return active vectors."""
         return self.active_vectors
 
@@ -399,7 +398,7 @@ class Common(DataSetFilters, DataObject):
         self.active_vectors_name = DEFAULT_VECTOR_KEY
 
     @property
-    def t_coords(self) -> pyvista_ndarray:
+    def t_coords(self) -> 'pyvista.pyvista_ndarray':
         """Return the active texture coordinates on the points."""
         return self.point_arrays.t_coords
 
@@ -552,7 +551,7 @@ class Common(DataSetFilters, DataObject):
             self.set_active_scalars(new_name, preference=field)
 
     @property
-    def active_scalars(self) -> pyvista_ndarray:
+    def active_scalars(self) -> 'pyvista.pyvista_ndarray':
         """Return the active scalars as an array."""
         field, name = self.active_scalars_info
         if name is not None:
@@ -561,7 +560,7 @@ class Common(DataSetFilters, DataObject):
             elif field == FieldAssociation.CELL:
                 return self.cell_arrays[name]
 
-    def get_data_range(self, arr: Optional[str, np.ndarray]=None, preference='cell'):
+    def get_data_range(self, arr: Optional[Union[str, np.ndarray]]=None, preference='cell'):
         """Get the non-NaN min and max of a named array.
 
         Parameters
@@ -936,7 +935,7 @@ class Common(DataSetFilters, DataObject):
         if is_pyvista_dataset(mesh):
             self.copy_meta_from(mesh)
 
-    def cast_to_unstructured_grid(self) -> pyvista.UnstructuredGrid:
+    def cast_to_unstructured_grid(self) -> 'pyvista.UnstructuredGrid':
         """Get a new representation of this object as an :class:`pyvista.UnstructuredGrid`."""
         alg = vtk.vtkAppendFilter()
         alg.AddInputData(self)

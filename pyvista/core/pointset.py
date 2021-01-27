@@ -278,7 +278,7 @@ class PolyData(vtkPolyData, PointSet, PolyDataFilters):
         else:
             self.SetPolys(CellArray(faces))
 
-    def __sub__(self, cutting_mesh: pyvista.PolyData) -> pyvista.PolyData:
+    def __sub__(self, cutting_mesh: 'pyvista.PolyData') -> 'pyvista.PolyData':
         """Subtract two meshes."""
         return self.boolean_cut(cutting_mesh)
 
@@ -358,7 +358,7 @@ class PolyData(vtkPolyData, PointSet, PolyDataFilters):
         return mprop.GetVolume()
 
     @property
-    def point_normals(self) -> 'pyvista.pyvista_ndarray'':
+    def point_normals(self) -> 'pyvista.pyvista_ndarray':
         """Return the point normals."""
         mesh = self.compute_normals(cell_normals=False, inplace=False)
         return mesh.point_arrays['Normals']
@@ -566,7 +566,7 @@ class UnstructuredGrid(vtkUnstructuredGrid, PointGrid, UnstructuredGridFilters):
         """Return the standard str representation."""
         return Common.__str__(self)
 
-    def _from_cells_dict(self, cells_dict: Dict[int, np.ndarry], points: np.ndarray, deep=True):
+    def _from_cells_dict(self, cells_dict: Dict[int, np.ndarray], points: np.ndarray, deep: bool=True):
         if points.ndim != 2 or points.shape[-1] != 3:
             raise ValueError("Points array must be a [M, 3] array")
 
@@ -707,7 +707,7 @@ class UnstructuredGrid(vtkUnstructuredGrid, PointGrid, UnstructuredGridFilters):
         raise AttributeError('Install vtk>=9.0.0 for `cell_connectivity`\n'
                              'Otherwise, use the legacy `cells` method')
 
-    def linear_copy(self, deep=False) -> pyvista.UnstructuredGrid:
+    def linear_copy(self, deep=False) -> 'pyvista.UnstructuredGrid':
         """Return a copy of the unstructured grid containing only linear cells.
 
         Converts the following cell types to their linear equivalents.
@@ -962,7 +962,7 @@ class StructuredGrid(vtkStructuredGrid, PointGrid, StructuredGridFilters):
 
         return self.extract_subset(voi, rate, boundary=False)
 
-    def hide_cells(self, ind: Iterable[int, bool]):
+    def hide_cells(self, ind: Iterable[Union[int, bool]]):
         """Hide cells without deleting them.
 
         Hides cells by setting the ghost_cells array to HIDDEN_CELL.
