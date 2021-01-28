@@ -155,11 +155,9 @@ yellowgreen
 
 """
 
-# shamelessly copied from matplotlib.colors
-from param import Tuple
-
 from pyvista.typing import Color
 
+# shamelessly copied from matplotlib.colors
 hexcolors = {
     'aliceblue':            '#F0F8FF',
     'antiquewhite':         '#FAEBD7',
